@@ -1,0 +1,36 @@
+name: Build macOS app
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure (universal: Apple silicon + Intel)
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release "-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64"
+
+      - name: Build app and plug-ins
+        run: cmake --build build --config Release --parallel 4 --target EqualLoudnessProcessor_Standalone EqualLoudnessProcessor_AU EqualLoudnessProcessor_VST3
+
+      - name: Sign (ad hoc) and package
+        run: |
+          set -e
+          A=build/EqualLoudnessProcessor_artefacts/Release
+          mkdir -p dist
+          cp -R "$A/Standalone/Equal-Loudness Processor.app" dist/
+          cp -R "$A/AU/Equal-Loudness Processor.component" dist/
+          cp -R "$A/VST3/Equal-Loudness Processor.vst3" dist/
+          for b in dist/*; do codesign --force --deep --sign - "$b"; done
+          cp INSTALL.txt dist/
+          cd dist && ditto -c -k --sequesterRsrc --keepParent . ../Equal-Loudness-Processor-mac.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Equal-Loudness-Processor-mac
+          path: Equal-Loudness-Processor-mac.zip
+          retention-days: 30
