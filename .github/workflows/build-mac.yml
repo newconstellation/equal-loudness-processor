@@ -5,6 +5,9 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: macos-14
@@ -34,3 +37,16 @@ jobs:
           name: Equal-Loudness-Processor-mac
           path: Equal-Loudness-Processor-mac.zip
           retention-days: 30
+
+      - name: Publish the build to the "builds" branch
+        run: |
+          set -e
+          cp Equal-Loudness-Processor-mac.zip "$RUNNER_TEMP/"
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git checkout --orphan builds
+          git rm -rf --quiet .
+          cp "$RUNNER_TEMP/Equal-Loudness-Processor-mac.zip" .
+          git add -f Equal-Loudness-Processor-mac.zip
+          git commit -m "Mac build of ${GITHUB_SHA::7}"
+          git push -f origin builds
