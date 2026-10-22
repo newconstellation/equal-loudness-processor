@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure (universal: Apple silicon + Intel)
+      - name: "Configure (universal, Apple silicon + Intel)"
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release "-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64"
 
       - name: Build app and plug-ins
